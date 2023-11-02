@@ -1,0 +1,18 @@
+QBS181 -- Notes on potential analyses and plots
+
+1. Line graph showing data over time by country
+-incident cases
+-active cases
+-cumulative cases
+-deaths
+-consider R shiny app that allows you to select data range and country (and automatically adjust scale to match the data)
+
+2. Matrix allowing us to visualize missing data 
+-each country is a row
+-each columns is a day 
+-color cells based on presence/absence of data on that day and in that country
+-same, but each column is a week, and use shading to depict % missing in that week/country 
+-same, but each column is a month...
+
+
+
