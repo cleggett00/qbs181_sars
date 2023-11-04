@@ -14,7 +14,6 @@ Install packages
 library(ggplot2)
 library(dplyr)
 library(tidyverse)
-library(sf)
 library(rprojroot)
 library(naniar)
 ```
@@ -76,12 +75,46 @@ dates_df$Country <- "Dummy"
 # append this dates df to our raw data
 df1 <- bind_rows(cleandata, dates_df)
 
-# reshape to wide and check out missingness
+# reshape to wide and check out overall missingness
 df1_cases <- df1[c("Date","Country","Cases")]
 df1_wide <- spread(df1_cases, key = Country, value = Cases)
-df1_wide$Date <- NULL
-df1_wide$Dummy <- NULL
-vis_miss(df1_wide)
+df1_wide2 <- df1_wide
+df1_wide2$Date <- NULL
+df1_wide2$Dummy <- NULL
+vis_miss(df1_wide2)
+
+# tabulate and plot overall missingness by day of week
+missing_byDate <- df1_wide %>%
+     mutate(num_missing = rowSums(is.na(df1_wide)),
+            num_obs = rowSums(is.na(df1_wide) + !is.na(df1_wide)),
+            DOW = weekdays(df1_wide$Date)) %>%
+     select(Date, 
+            num_missing, 
+            num_obs, 
+            DOW)
+missing_byDOW <- missing_byDate %>%
+     group_by(DOW) %>%
+     summarize(missing = sum(num_missing),
+               total = sum(num_obs)) %>%
+     mutate(perc_missing = 100*missing/total,
+            sort_order = case_when(DOW == "Sunday"    ~ 1,
+                                   DOW == "Monday"    ~ 2,
+                                   DOW == "Tuesday"   ~ 3,
+                                   DOW == "Wednesday" ~ 4,
+                                   DOW == "Thursday"  ~ 5,
+                                   DOW == "Friday"    ~ 6,
+                                   DOW == "Saturday"  ~ 7)
+            )
+
+ggplot(missing_byDOW,aes(x=DOW,y=perc_missing))+
+  geom_bar(stat="identity") +
+  labs(y="Percent missing observations", x = "Day of Week") +
+  theme_classic()
 ```
+
+```{r}
+
+```
+
 
 
