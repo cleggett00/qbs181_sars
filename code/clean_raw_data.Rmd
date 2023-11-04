@@ -1,0 +1,68 @@
+---
+title: "QBS 181: clean_raw_data"
+author: "Chris Leggett"
+date: "2023-11-04"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Install packages
+```{r}
+library(ggplot2)
+library(dplyr)
+library(tidyverse)
+library(rprojroot)
+library(naniar)
+```
+
+
+## Import raw data
+
+```{r}
+project_path <- find_rstudio_root_file()
+rawdata_path <- paste0(project_path, "/raw_data/")
+data_path <- paste0(project_path, "/data/")
+rawdata <- read.csv(paste0(rawdata_path,"sars_2003_complete_dataset_clean.csv"))
+```
+
+
+## Clean data a bit and save final file
+
+```{r}
+
+cleandata <- rawdata %>%
+
+     # dates
+     mutate(Date = as.Date(Date)) %>%
+          
+     # clean up country names
+     mutate(Country = case_when(Country == "Canada" ~ "Canadian",
+                                Country == "Hong Kong SAR, China" ~ "Hong Kong",
+                                Country == "Macao SAR, China" ~ "Macao",
+                                Country == "Republic of Ireland" ~ "Ireland",
+                                Country == "Russian Federation" ~ "Russia",
+                                Country == "Taiwan, China" ~ "Taiwan",
+                                Country == "United Kingdom" ~ "UK",
+                                Country == "United States" ~ "USA",
+                                Country == "Republic of Korea" ~ "Korea",
+                                .default = Country)) %>%
+     
+     # clean up variable names
+     rename(Recovered = Number.recovered, 
+            Cases = Cumulative.number.of.case.s.,
+            Deaths = Number.of.deaths) %>%
+     
+     # drop rogue observation (two obs on same day, one of which is odd)
+     filter(!(Country == "China" & Date == "2003-04-12" & Cases == 62))
+
+# save cleaned data file 
+saveRDS(cleandata, file = paste0(data_path, "cleandata.rds"))
+
+```
+
+
+
+

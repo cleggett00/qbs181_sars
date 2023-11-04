@@ -19,46 +19,13 @@ library(naniar)
 ```
 
 
-## Import raw data
+## Get clean data
 
 ```{r}
 project_path <- find_rstudio_root_file()
-rawdata_path <- paste0(project_path, "/raw_data/")
-rawdata <- read.csv(paste0(rawdata_path,"sars_2003_complete_dataset_clean.csv"))
+data_path <- paste0(project_path, "/data/")
+cleandata <- readRDS(file = paste0(data_path,"cleandata.rds"))
 ```
-
-
-## Clean data a bit 
-
-```{r}
-
-cleandata <- rawdata %>%
-
-     # dates
-     mutate(Date = as.Date(Date)) %>%
-          
-     # clean up country names
-     mutate(Country = case_when(Country == "Canada" ~ "Canadian",
-                                Country == "Hong Kong SAR, China" ~ "Hong Kong",
-                                Country == "Macao SAR, China" ~ "Macao",
-                                Country == "Republic of Ireland" ~ "Ireland",
-                                Country == "Russian Federation" ~ "Russia",
-                                Country == "Taiwan, China" ~ "Taiwan",
-                                Country == "United Kingdom" ~ "UK",
-                                Country == "United States" ~ "USA",
-                                Country == "Republic of Korea" ~ "Korea",
-                                .default = Country)) %>%
-     
-     # clean up variable names
-     rename(Recovered = Number.recovered, 
-            Cases = Cumulative.number.of.case.s.,
-            Deaths = Number.of.deaths) %>%
-     
-     # drop rogue observation (two obs on same day, one of which is odd)
-     filter(!(Country == "China" & Date == "2003-04-12" & Cases == 62))
-
-```
-
 
 
 ## Evaluate missingness
