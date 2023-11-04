@@ -1,0 +1,87 @@
+---
+title: "qbs181_examine_missing_data"
+author: "Chris Leggett"
+date: "2023-11-04"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Install packages
+```{r}
+library(ggplot2)
+library(dplyr)
+library(tidyverse)
+library(sf)
+library(rprojroot)
+library(naniar)
+```
+
+
+## Import raw data
+
+```{r}
+project_path <- find_rstudio_root_file()
+rawdata_path <- paste0(project_path, "/raw_data/")
+rawdata <- read.csv(paste0(rawdata_path,"sars_2003_complete_dataset_clean.csv"))
+```
+
+
+## Clean data a bit 
+
+```{r}
+
+cleandata <- rawdata %>%
+
+     # dates
+     mutate(Date = as.Date(Date)) %>%
+          
+     # clean up country names
+     mutate(Country = case_when(Country == "Canada" ~ "Canadian",
+                                Country == "Hong Kong SAR, China" ~ "Hong Kong",
+                                Country == "Macao SAR, China" ~ "Macao",
+                                Country == "Republic of Ireland" ~ "Ireland",
+                                Country == "Russian Federation" ~ "Russia",
+                                Country == "Taiwan, China" ~ "Taiwan",
+                                Country == "United Kingdom" ~ "UK",
+                                Country == "United States" ~ "USA",
+                                Country == "Republic of Korea" ~ "Korea",
+                                .default = Country)) %>%
+     
+     # clean up variable names
+     rename(Recovered = Number.recovered, 
+            Cases = Cumulative.number.of.case.s.,
+            Deaths = Number.of.deaths) %>%
+     
+     # drop rogue observation (two obs on same day, one of which is odd)
+     filter(!(Country == "China" & Date == "2003-04-12" & Cases == 62))
+
+```
+
+
+
+## Evaluate missingness
+
+```{r}
+
+# create a data frame that has ALL dates within the date range of the raw data
+dates <- seq.Date(from = as.Date(min(cleandata$Date)), 
+                  to = as.Date(max(cleandata$Date)),1)
+dates_df <- as.data.frame(dates, col.names = c("Date"))
+names(dates_df) <- "Date"
+dates_df$Country <- "Dummy"
+
+# append this dates df to our raw data
+df1 <- bind_rows(cleandata, dates_df)
+
+# reshape to wide and check out missingness
+df1_cases <- df1[c("Date","Country","Cases")]
+df1_wide <- spread(df1_cases, key = Country, value = Cases)
+df1_wide$Date <- NULL
+df1_wide$Dummy <- NULL
+vis_miss(df1_wide)
+```
+
+
