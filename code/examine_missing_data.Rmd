@@ -9,7 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-Install packages
+## Libraries
 ```{r}
 library(ggplot2)
 library(dplyr)
@@ -32,7 +32,8 @@ cleandata <- readRDS(file = paste0(data_path,"cleandata.rds"))
 
 ```{r}
 
-# create a data frame that has ALL dates within the date range of the raw data
+# dates with missing data are invisible because they are not in the dataset
+# so we create a df that has ALL dates within the range of the raw data
 dates <- seq.Date(from = as.Date(min(cleandata$Date)), 
                   to = as.Date(max(cleandata$Date)),1)
 dates_df <- as.data.frame(dates, col.names = c("Date"))
@@ -40,21 +41,43 @@ names(dates_df) <- "Date"
 dates_df$Country <- "Dummy"
 
 # append this dates df to our raw data
-df1 <- bind_rows(cleandata, dates_df)
+df <- bind_rows(cleandata, dates_df)
 
-# reshape to wide and check out overall missingness
-df1_cases <- df1[c("Date","Country","Cases")]
-df1_wide <- spread(df1_cases, key = Country, value = Cases)
-df1_wide2 <- df1_wide
-df1_wide2$Date <- NULL
-df1_wide2$Dummy <- NULL
-vis_miss(df1_wide2)
+# reshape to wide, focusing on "Cases" column
+cases <- df[c("Date","Country","Cases")]
+cases_wide <- spread(cases, key = Country, value = Cases) %>%
+     mutate(Week = as.numeric(format(Date, "%W")) - 10,
+            DOW = as.factor(weekdays(cases_wide$Date)))
+cases_wide$DOW <- factor(cases_wide$DOW, 
+                            levels = c("Sunday",
+                                       "Monday",
+                                       "Tuesday",
+                                       "Wednesday",
+                                       "Thursday",
+                                       "Friday",
+                                       "Saturday"))
 
-# tabulate and plot overall missingness by day of week
-missing_byDate <- df1_wide %>%
-     mutate(num_missing = rowSums(is.na(df1_wide)),
-            num_obs = rowSums(is.na(df1_wide) + !is.na(df1_wide)),
-            DOW = weekdays(df1_wide$Date)) %>%
+# plot overall missingness pattern
+cases_wide_for_plot <- cases_wide %>%
+     select(!c(Date,Dummy,Week,DOW))
+vis_miss(cases_wide_for_plot) + 
+     labs(y = "Days since 3/17/2003") 
+
+# plot percent missing by week and day of week
+cases_wide_for_weekly_plot <- cases_wide %>%
+     select(!c(Date,Dummy,DOW)) %>%
+     filter(Week != 17)
+gg_miss_fct(cases_wide_for_weekly_plot, Week) +
+          labs(x = "Weeks since 3/17/2003", y = "") 
+cases_wide_for_DOW_plot <- cases_wide %>%
+     select(!c(Date,Dummy,Week)) 
+gg_miss_fct(cases_wide_for_DOW_plot, DOW) +
+          labs(x = "", y = "") 
+
+# plot missingness by day of week
+missing_byDate <- cases_wide %>%
+     mutate(num_missing = rowSums(is.na(cases_wide)),
+            num_obs = rowSums(is.na(cases_wide) + !is.na(cases_wide))) %>%
      select(Date, 
             num_missing, 
             num_obs, 
@@ -63,25 +86,14 @@ missing_byDOW <- missing_byDate %>%
      group_by(DOW) %>%
      summarize(missing = sum(num_missing),
                total = sum(num_obs)) %>%
-     mutate(perc_missing = 100*missing/total,
-            sort_order = case_when(DOW == "Sunday"    ~ 1,
-                                   DOW == "Monday"    ~ 2,
-                                   DOW == "Tuesday"   ~ 3,
-                                   DOW == "Wednesday" ~ 4,
-                                   DOW == "Thursday"  ~ 5,
-                                   DOW == "Friday"    ~ 6,
-                                   DOW == "Saturday"  ~ 7)
-            )
-
+     mutate(perc_missing = 100*missing/total)
+          
 ggplot(missing_byDOW,aes(x=DOW,y=perc_missing))+
   geom_bar(stat="identity") +
   labs(y="Percent missing observations", x = "Day of Week") +
   theme_classic()
 ```
 
-```{r}
-
-```
 
 
 
