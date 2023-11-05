@@ -47,7 +47,7 @@ df <- bind_rows(cleandata, dates_df)
 cases <- df[c("Date","Country","Cases")]
 cases_wide <- spread(cases, key = Country, value = Cases) %>%
      mutate(Week = as.numeric(format(Date, "%W")) - 10,
-            DOW = as.factor(weekdays(cases_wide$Date)))
+            DOW = as.factor(weekdays(Date)))
 cases_wide$DOW <- factor(cases_wide$DOW, 
                             levels = c("Sunday",
                                        "Monday",
