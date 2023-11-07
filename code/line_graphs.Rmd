@@ -1,0 +1,134 @@
+---
+title: "qbs181_examine_missing_data"
+author: "Chris Leggett"
+date: "2023-11-04"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Install packages
+```{r}
+library(ggplot2)
+library(dplyr)
+library(tidyverse)
+library(rprojroot)
+library(naniar)
+library(viridis)
+library(gridExtra)
+```
+
+
+## get cleaned data
+
+```{r}
+project_path <- find_rstudio_root_file()
+rawdata_path <- paste0(project_path, "/raw_data/")
+data_path <- paste0(project_path, "/data/")
+cleandata <- readRDS(file = paste0(data_path,"cleandata2.rds"))
+```
+
+
+## Line graphs 
+```{r}
+
+##############################################################
+# define function
+
+# plot one country at a time
+plot_one <- function(df=cleandata, country, yvar) {
+     df <- df %>%
+          filter(Country %in%(country))
+     ggplot(df, aes(x = Date, y = get(yvar))) +
+          geom_point(color = "steelblue3") +
+          labs(x= NULL, y= NULL) +
+          ggtitle(country) +
+          expand_limits(y=0) +
+          theme_classic()
+}
+
+
+#################################################################
+# cumulative cases
+
+# all countries at once
+ggplot(cleandata, aes(x = Date, y = Cases, color = Country)) +
+    # geom_line() +
+     scale_color_viridis(discrete = TRUE) +
+     geom_point() +
+     theme_classic()
+
+
+#  one country at a time in grid plot
+p1 <- plot_one(country = "China", yvar = "Cases")
+p2 <- plot_one(country = "Hong Kong", yvar = "Cases")
+p3 <- plot_one(country = "Taiwan", yvar = "Cases")
+p4 <- plot_one(country = "Singapore", yvar = "Cases")
+p5 <- plot_one(country = "Canada", yvar = "Cases")
+p6 <- plot_one(country = "USA", yvar = "Cases")
+p7 <- plot_one(country = "Philippines", yvar = "Cases")
+p8 <- plot_one(country = "Germany", yvar = "Cases")
+p9 <- plot_one(country = "Vietnam", yvar = "Cases")
+grid.arrange(p1, p2, p3, p4, p5, p6, p7, p8, p9, ncol = 3, bottom = "DAILY CUMULATIVE CASES BY COUNTRY")
+
+
+
+#################################################################
+# Deaths
+
+# all countries at once
+ggplot(cleandata, aes(x = Date, y = Deaths, color = Country)) +
+    # geom_line() +
+     scale_color_viridis(discrete = TRUE) +
+     geom_point() +
+     theme_classic()
+
+
+#  one country at a time in grid plot
+p1 <- plot_one(country = "China", yvar = "Deaths")
+p2 <- plot_one(country = "Hong Kong", yvar = "Deaths")
+p3 <- plot_one(country = "Taiwan", yvar = "Deaths")
+p4 <- plot_one(country = "Singapore", yvar = "Deaths")
+p5 <- plot_one(country = "Canada", yvar = "Deaths")
+p6 <- plot_one(country = "USA", yvar = "Deaths")
+p7 <- plot_one(country = "Philippines", yvar = "Deaths")
+p8 <- plot_one(country = "Germany", yvar = "Deaths")
+p9 <- plot_one(country = "Vietnam", yvar = "Deaths")
+grid.arrange(p1, p2, p3, p4, p5, p6, p7, p8, p9, ncol = 3, bottom = "DAILY DEATHS BY COUNTRY")
+
+
+
+
+
+#################################################################
+# Incident Cases
+
+# all countries at once
+ggplot(cleandata, aes(x = Date, y = New_Cases, color = Country)) +
+    # geom_line() +
+     scale_color_viridis(discrete = TRUE) +
+     geom_point() +
+     theme_classic()
+
+
+#  one country at a time in grid plot
+p1 <- plot_one(country = "China", yvar = "New_Cases")
+p2 <- plot_one(country = "Hong Kong", yvar = "New_Cases")
+p3 <- plot_one(country = "Taiwan", yvar = "New_Cases")
+p4 <- plot_one(country = "Singapore", yvar = "New_Cases")
+p5 <- plot_one(country = "Canada", yvar = "New_Cases")
+p6 <- plot_one(country = "USA", yvar = "New_Cases")
+p7 <- plot_one(country = "Philippines", yvar = "New_Cases")
+p8 <- plot_one(country = "Germany", yvar = "New_Cases")
+p9 <- plot_one(country = "Vietnam", yvar = "New_Cases")
+grid.arrange(p1, p2, p3, p4, p5, p6, p7, p8, p9, ncol = 3, bottom = "DAILY INCIDENT CASES BY COUNTRY")
+
+```
+
+
+
+
+
+

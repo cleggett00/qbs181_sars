@@ -40,6 +40,7 @@ cleandata <- rawdata %>%
           
      # clean up country names
      mutate(Country = case_when(Country == "Canadian" ~ "Canada",
+                                Country == "Viet Nam" ~ "Vietnam",
                                 Country == "Hong Kong SAR, China" ~ "Hong Kong",
                                 Country == "Macao SAR, China" ~ "Macao",
                                 Country == "Republic of Ireland" ~ "Ireland",
@@ -56,7 +57,12 @@ cleandata <- rawdata %>%
             Deaths = Number.of.deaths) %>%
      
      # drop rogue observation (two obs on same day, one of which is odd)
-     filter(!(Country == "China" & Date == "2003-04-12" & Cases == 62))
+     filter(!(Country == "China" & Date == "2003-04-12" & Cases == 62)) %>%
+
+     # Add incident cases
+     group_by(Country) %>%
+     arrange(Date) %>%
+     mutate(New_Cases = Cases - lag(Cases))
 
 # create slim version that only has countries with at least 10 cumulative cases
 cleandata2 <- cleandata %>%
