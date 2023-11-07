@@ -1,0 +1,88 @@
+---
+title: "rshiny"
+author: "Aislinn Gilmour"
+date: "2023-11-07"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Load Libraries
+```{r}
+library(shiny)
+library(leaflet)
+library(plotly)
+library(dplyr)
+library(geonames)
+library(readxl)
+```
+
+Load in Data
+```{r}
+#set working directory
+setwd("~/Documents/QBS_Fall_2023/Data_Wrangling")
+#Load datasets
+cleandata2 <- readRDS("cleandata2.rds")
+cleandata<-readRDS("cleandata.rds")
+lat_long<-read_xls("lat_lon.xls")
+```
+
+Fix Date Type for R Shiny App
+```{r}
+ #fix date type
+cleandata2$Date <- as.Date(cleandata2$Date, format = "%Y-%m-%d")
+```
+
+Add in Latitude and Longitude
+```{r}
+# Create a dataset with latitude and longitude to be able to map countries
+clean_w_lat <- merge(cleandata2, lat_long, by.x = "Country", by.y = "Country")
+```
+`
+Restrict to Only Contries with Logical Data
+```{r}
+#only China, Hong Kong, Taiwan, Singapore, Canada because of data quality 
+clean_w_lat2 <- clean_w_lat %>%
+  filter(Country %in% c("China", "Hong Kong", "Taiwan", "Singapore", "Canada"))
+
+
+```
+
+Build R Shiny App
+```{r}
+#Define Shiny App UI
+ui <- fluidPage(
+  titlePanel("Relative Cumulative SARS Cases March - July 2003"),  #Add title
+  #Create a slider input for date range
+  sliderInput("dateRange", "Date Range:", min = min(clean_w_lat2$Date), max = max(clean_w_lat2$Date), value = c(min(clean_w_lat2$Date), max(clean_w_lat2$Date))),
+  leafletOutput("map") #Create a leaflet map
+)
+
+#Define the Shiny app server
+server <- function(input, output) {
+  #Create the leaflet map
+  output$map <- renderLeaflet({
+    #Customize the map with your data and markers
+    leaflet(data = clean_w_lat2) %>%
+      addTiles() %>%
+      addCircleMarkers(
+        lng = ~Longitude, lat = ~Latitude, 
+        popup = ~Country, 
+        radius = calculate_circle_size(clean_w_lat2, input$dateRange)
+      )
+  })
+
+  #Function to calculate circle size based on date and cumulative cases
+  calculate_circle_size <- function(data, date_range) {
+    filtered_data <- filter(data, Date >= date_range[1] & Date <= date_range[2])
+    circle_size <- filtered_data$Cases
+    scaled_circle_size <- circle_size / 100  # Make smaller because they are way too big
+    return(scaled_circle_size)
+  }
+}
+
+shinyApp(ui = ui, server = server)
+
+```
