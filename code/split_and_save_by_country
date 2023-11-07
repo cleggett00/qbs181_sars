@@ -1,0 +1,15 @@
+#if anyone wants to country separate analysis here is afunction to split the data by country and save each country separately as a RDS file
+
+split_and_save_by_country <- function(data) {
+  unique_countries <- unique(data$Country)
+  
+  for (country in unique_countries) {
+    country_data <- data[data$Country == country, ]
+    
+    # Define the RDS file name for each country
+    rds_file <- paste0(country, ".rds")
+    
+    # Save the country-specific data to an RDS file
+    saveRDS(country_data, file = rds_file)
+  }
+}
