@@ -1,0 +1,61 @@
+---
+title: "scraping_pop"
+author: "Monica Dimambro"
+date: "2023-11-07"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Libraries
+```{r}
+library(rvest) # for webscraping population info
+```
+
+# Scraping global 2003 population table 
+Attribution: used chatGPT for starter code then edited to get correct table
+
+Scrape table
+```{r}
+# Define the URL of the website
+url <- "https://theodora.com/wfb2003/rankings/population_2003_0.html"
+
+# Read the HTML content of the page
+webpage <- read_html(url)
+
+# Extract the table from the webpage using CSS selectors
+pop <- webpage %>%
+  html_table(fill = TRUE) %>%
+  .[[2]]  # Second table on the page is the one we want
+
+# Print the scraped table
+print(pop)
+```
+
+Clean
+```{r}
+# drop second col
+pop <- pop[,-c(2)]
+
+# set first row equal to colnames
+colnames(pop) <- c('Rank','Country','Total_Pop')
+
+# drop first row
+pop <- pop[-c(1),]
+
+# look
+head(pop)
+
+# convert pop to int
+pop$Total_Pop <- gsub(",", "", pop$Total_Pop)
+pop$Total_Pop <- as.integer(pop$Total_Pop)
+head(pop)
+```
+
+Save for later use
+```{r}
+# save as RDS
+saveRDS(pop, file = "~/Desktop/Dartmouth/6. Fall 2023 Term/QBS 181 Data Wrangling/5. Final Project/pop.rds")
+```
