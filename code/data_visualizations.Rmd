@@ -1,7 +1,7 @@
 ---
-title: "qbs181_examine_missing_data"
+title: "Data Visualizations"
 author: "Chris Leggett"
-date: "2023-11-04"
+date: "2023-11-08"
 output: html_document
 ---
 
@@ -27,18 +27,45 @@ library(gridExtra)
 project_path <- find_rstudio_root_file()
 rawdata_path <- paste0(project_path, "/raw_data/")
 data_path <- paste0(project_path, "/data/")
-cleandata <- readRDS(file = paste0(data_path,"cleandata2.rds"))
+cleandata <- readRDS(file = paste0(data_path,"cleandata.rds"))
+cleandata2 <- readRDS(file = paste0(data_path,"cleandata2.rds"))
 ```
 
 
-## Line graphs 
+## Bar chart showing maximum cases by country
+```{r}
+# cases
+cleandata_grouped <- cleandata %>%
+     group_by(Country) %>%
+     summarize(max_cases = max(Cases)) 
+p1 <-ggplot(cleandata_grouped, aes(x = Country, y = max_cases)) +
+     geom_bar(position = "dodge", stat = "identity", fill = "steelblue") +
+     labs(y = "Total Cases", x = "") +
+     coord_flip() +
+     theme_classic()
+
+# logged cases
+cleandata_grouped$log_cases = log(cleandata_grouped$max_cases)
+p2 <-ggplot(cleandata_grouped, aes(x = Country, y = log_cases)) +
+     geom_bar(position = "dodge", stat = "identity", fill = "steelblue") +
+     labs(y = "Log of Total Cases", x = "") +
+     coord_flip() +
+     theme_classic()
+
+grid.arrange(p1, p2, ncol = 2)
+
+```
+
+
+
+## Line graphs of cases and deaths
 ```{r}
 
 ##############################################################
 # define function
 
 # plot one country at a time
-plot_one <- function(df=cleandata, country, yvar) {
+plot_one <- function(df=cleandata2, country, yvar) {
      df <- df %>%
           filter(Country %in%(country))
      ggplot(df, aes(x = Date, y = get(yvar))) +
@@ -54,7 +81,7 @@ plot_one <- function(df=cleandata, country, yvar) {
 # cumulative cases
 
 # all countries at once
-ggplot(cleandata, aes(x = Date, y = Cases, color = Country)) +
+ggplot(cleandata2, aes(x = Date, y = Cases, color = Country)) +
     # geom_line() +
      scale_color_viridis(discrete = TRUE) +
      geom_point() +
@@ -79,7 +106,7 @@ grid.arrange(p1, p2, p3, p4, p5, p6, p7, p8, p9, ncol = 3, bottom = "DAILY CUMUL
 # Deaths
 
 # all countries at once
-ggplot(cleandata, aes(x = Date, y = Deaths, color = Country)) +
+ggplot(cleandata2, aes(x = Date, y = Deaths, color = Country)) +
     # geom_line() +
      scale_color_viridis(discrete = TRUE) +
      geom_point() +
@@ -106,7 +133,7 @@ grid.arrange(p1, p2, p3, p4, p5, p6, p7, p8, p9, ncol = 3, bottom = "DAILY DEATH
 # Incident Cases
 
 # all countries at once
-ggplot(cleandata, aes(x = Date, y = New_Cases, color = Country)) +
+ggplot(cleandata2, aes(x = Date, y = New_Cases, color = Country)) +
     # geom_line() +
      scale_color_viridis(discrete = TRUE) +
      geom_point() +
@@ -125,6 +152,30 @@ p8 <- plot_one(country = "Germany", yvar = "New_Cases")
 p9 <- plot_one(country = "Vietnam", yvar = "New_Cases")
 grid.arrange(p1, p2, p3, p4, p5, p6, p7, p8, p9, ncol = 3, bottom = "DAILY INCIDENT CASES BY COUNTRY")
 
+
+#################################################################
+# Case fatality rate
+
+# all countries at once
+cleandata2$case_fatality = cleandata2$Deaths/cleandata2$Cases
+ggplot(cleandata2, aes(x = Date, y = case_fatality, color = Country)) +
+    # geom_line() +
+     scale_color_viridis(discrete = TRUE) +
+     geom_point() +
+     theme_classic()
+
+
+#  one country at a time in grid plot
+p1 <- plot_one(country = "China", yvar = "case_fatality")
+p2 <- plot_one(country = "Hong Kong", yvar = "case_fatality")
+p3 <- plot_one(country = "Taiwan", yvar = "case_fatality")
+p4 <- plot_one(country = "Singapore", yvar = "case_fatality")
+p5 <- plot_one(country = "Canada", yvar = "case_fatality")
+p6 <- plot_one(country = "USA", yvar = "case_fatality")
+p7 <- plot_one(country = "Philippines", yvar = "case_fatality")
+p8 <- plot_one(country = "Germany", yvar = "case_fatality")
+p9 <- plot_one(country = "Vietnam", yvar = "case_fatality")
+grid.arrange(p1, p2, p3, p4, p5, p6, p7, p8, p9, ncol = 3, bottom = "DAILY CASE FATALITY BY COUNTRY")
 ```
 
 

@@ -25,6 +25,7 @@ library(naniar)
 project_path <- find_rstudio_root_file()
 data_path <- paste0(project_path, "/data/")
 cleandata <- readRDS(file = paste0(data_path,"cleandata.rds"))
+cleandata2 <- readRDS(file = paste0(data_path,"cleandata2.rds"))
 ```
 
 
@@ -63,6 +64,12 @@ cases_wide_for_plot <- cases_wide %>%
 vis_miss(cases_wide_for_plot) + 
      labs(y = "Days since 3/17/2003") 
 
+# colorful version of overall missingness pattern
+cases_wide_for_daily_plot <- cases_wide %>%
+     select(!c(Dummy,Week,DOW))
+gg_miss_fct(cases_wide_for_daily_plot, Date) + 
+     labs(x = " ", y = "") 
+
 # plot percent missing by week and day of week
 cases_wide_for_weekly_plot <- cases_wide %>%
      select(!c(Date,Dummy,DOW)) %>%
@@ -73,6 +80,13 @@ cases_wide_for_DOW_plot <- cases_wide %>%
      select(!c(Date,Dummy,Week)) 
 gg_miss_fct(cases_wide_for_DOW_plot, DOW) +
           labs(x = "", y = "") 
+cases_wide_for_weekly_plot_subset <- cases_wide %>%
+     select(Week, China, USA, Philippines, Vietnam, `Hong Kong`, Taiwan, Singapore, Canada, Germany) %>%
+     filter(Week != 17)
+gg_miss_fct(cases_wide_for_weekly_plot_subset, Week) +
+          labs(x = "Weeks since 3/17/2003", y = "") 
+
+
 
 # plot missingness by day of week
 missing_byDate <- cases_wide %>%
@@ -86,14 +100,28 @@ missing_byDOW <- missing_byDate %>%
      group_by(DOW) %>%
      summarize(missing = sum(num_missing),
                total = sum(num_obs)) %>%
-     mutate(perc_missing = 100*missing/total)
-          
+     mutate(perc_missing = 100*missing/total,
+            perc_fmt = format(perc_missing,digits = 3))
 ggplot(missing_byDOW,aes(x=DOW,y=perc_missing))+
-  geom_bar(stat="identity") +
-  labs(y="Percent missing observations", x = "Day of Week") +
+  geom_bar(stat="identity", fill="#440154FF", width = .6) +
+  geom_text(aes(label=perc_fmt), vjust=1.6, color="white", size=3.5)+
+  labs(y="Percent Missing", x = " ") +
   theme_classic()
 ```
 
 
+## heat map for selected countries
+```{r}
+heatdata <- cleandata %>%
+     select(Date, Country, New_Cases) %>%
+     filter(Country %in% c('China', 'USA', 'Philippines', 'Vietnam', 'Hong Kong', 'Taiwan', 'Singapore', 'Canada', 'Germany'))
+
+ggplot(heatdata, aes(Country, Date, fill = New_Cases)) +
+     geom_tile() +
+     coord_flip() +
+     labs(y=" ", x = " ") +
+     theme_classic()
+
+```
 
 

@@ -8,6 +8,7 @@ library(dplyr)
 library(tidyverse)
 library(rprojroot)
 library(shiny)
+library(shinythemes)
 
 # Get dataset
 project_path   <- find_rstudio_root_file()
@@ -21,7 +22,7 @@ cleandata      <- readRDS(file = paste0(data_path,"cleandata.rds")) %>%
 
 # Define app User Interface
 ui = fluidPage(
-
+     
      # define selector for country
      selectInput("picked_country", "Select Country", choices = c("China", "Hong Kong", "Singapore",
                                                                "Hong Kong", "Taiwan", "Canada",
@@ -52,7 +53,8 @@ server = function(input, output, session){
       selected <- reactive(filter(cleandata, Country %in% input$picked_country &
                                        Date >= input$date_selector[1] &
                                        Date <= input$date_selector[2] ))
-         
+      
+
      # Generate plot 
      output$trend = renderPlot({
           
@@ -61,7 +63,12 @@ server = function(input, output, session){
                     theme_classic() + 
                     ggtitle(input$picked_country) +
                     expand_limits(y= 0) +
-                    labs(x = NULL, y = input$picked_variable)
+                    labs(x = NULL, 
+                         y = input$picked_variable,
+                         title = "2003 SARS Outbreak",
+                         subtitle = input$picked_country,
+                         caption = "Data Source: https://www.kaggle.com/datasets") +
+                    theme(plot.caption = element_text(vjust = -2))
           print(p, vp=grid::viewport(gp=grid::gpar(cex=2)))
           
      })
