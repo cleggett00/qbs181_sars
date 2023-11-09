@@ -1,0 +1,255 @@
+---
+title: "MBD_SIR_plots"
+author: "Monica Dimambro"
+date: "2023-11-06"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Libraries
+```{r}
+library(dplyr) # for data manipulation
+library(deSolve) # for SIR plot
+library(rootSolve) # for SIR plot
+```
+
+# Load in Data
+```{r}
+all_sars <- readRDS("~/Desktop/Dartmouth/6. Fall 2023 Term/QBS 181 Data Wrangling/5. Final Project/cleandata.rds")
+subset_sars <- readRDS("~/Desktop/Dartmouth/6. Fall 2023 Term/QBS 181 Data Wrangling/5. Final Project/cleandata2.rds")
+
+demos <- read.csv("~/Desktop/Dartmouth/6. Fall 2023 Term/QBS 181 Data Wrangling/5. Final Project/summary_data_clean.csv")
+pop <- readRDS("~/Desktop/Dartmouth/6. Fall 2023 Term/QBS 181 Data Wrangling/5. Final Project/pop.rds")
+```
+
+Create table of only last entry (with maximum cumulative cases) per country with greater than max cumulative cases
+```{r}
+max_sars_subset <- subset_sars %>% group_by(Country) %>% summarise_all(last)
+print(max_sars_subset)
+```
+
+Merge pop data onto new subset of sars (more than 10 cumulative cases)
+```{r}
+# look for differences in country name
+table(max_sars_subset$Country) 
+table(pop$Country)
+
+# change Viet Nam to Vietnam
+max_sars_subset$Country <- ifelse(max_sars_subset$Country == "Viet Nam", "Vietnam", max_sars_subset$Country)
+
+# merge
+max_sars_subset <- merge(max_sars_subset, pop, by="Country", all.x=TRUE)
+
+# check
+head(max_sars_subset)
+```
+
+# SIR Models
+Attribution: the basis of this SIR code was from Applied Epidemiological Methods with Dr. Annie Hoen in Winter Term of 2023.
+
+1. Build a model with three compartments – susceptible (S), infected/infectious (I) and recovered (R). Use the following initial conditions:
+
+0.0001% of the population is infected
+Everyone else is susceptible
+
+Transmission rate from here: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3323341/
+Median R0 in Canada = 0.58
+Median R0 in Hong Kong = 1.10
+Median R0 in Singapore = 1.17
+
+B = 0.25 in Hong Kong (source: Chowell 2004, used to predict R0's above)
+
+Back Calculate gamma (recovery rate) for each country for which I have R0, assuming relationship beta/gamma = R0 and given beta and r0 from literature
+```{r}
+beta = 0.25
+
+r0_canada <- 0.58
+r0_hongkong <- 1.10
+r0_singapore <- 1.17
+
+gamma_canada <- beta/r0_canada
+gamma_hongkong <- beta/r0_hongkong
+gamma_singapore <- beta/r0_singapore
+```
+
+Create an SIR function
+```{r}
+sir <- function(time, state, parameters) {
+
+  with(as.list(c(state, parameters)), {
+
+    dS <- -beta * S * I
+    dI <-  beta * S * I - gamma * I
+    dR <-                 gamma * I
+
+    return(list(c(dS, dI, dR)))
+  })
+}
+```
+
+# CANADA
+Set parameters
+```{r}
+# set initial proportion in each compartment: Susceptible 0.999999, Infected 0.000001, Recovered 0
+init       <- c(S = 1-1e-6, I = 1e-6, R = 0.0)
+
+# set parameters (beta = infection parameter, gamma = recovery parameter)
+parameters_canada <- c(beta = beta, gamma = gamma_canada)
+
+# set time frame (2 years = 730 days)
+times <- seq(0, 730, by = 1)
+```
+
+Solve using ode (General Solver for Ordinary Differential Equations)
+```{r}
+# run ode function given parameters, initial proportions, and time frame
+out_canada <- ode(y = init, times = times, func = sir, parms = parameters_canada)
+
+## change to data frame
+out_canada <- as.data.frame(out_canada)
+
+## Delete time variable
+out_canada$time <- NULL
+
+## Show data
+tail(out_canada, 10) # 2.380932e-04% of pop infected after 2 years
+```
+
+2. Plot the time series of membership in each compartment. At the peak of the epidemic, what proportion of the population is infected? What is the proportion of the population infected during the epidemic (final size)?
+```{r}
+# find max proportion of pop infected at peak
+max(out_canada$I)*100 # 1x10-4 of pop infected at peak
+
+# find max number of pop infected at peak, based on proportion
+round((max(out_canada$I))*(max_sars_subset$Total_Pop[max_sars_subset$Country == "Canada"])) # rounded to 32
+
+# at end, what proportion of population had been infected:
+max(out_canada$R*100) # 0.00023% of pop
+
+# find number of population at end had been infected7
+round((max(out_canada$R))*(max_sars_subset$Total_Pop[max_sars_subset$Country == "Canada"])) # rounded to 77
+```
+
+3. Overlay plots (from link)
+```{r}
+# Plot
+matplot(x = times, y = out_canada, type = "l",
+        xlab = "Time (Days)", ylab = "Proportion of Population Susceptible and Recovered", main = "SIR Model - Canada",
+        lwd = 1, lty = 1, bty = "l", col = 2:4)
+
+# Add legend
+legend(40, 0.7, c("Susceptible", "Infected", "Recovered"), pch = 1, col = 2:4, bty = "n")
+```
+
+# HONG KONG
+Set parameters
+```{r}
+# set initial proportion in each compartment: Susceptible 0.999999, Infected 0.000001, Recovered 0
+init       <- c(S = 1-1e-6, I = 1e-6, R = 0.0)
+
+# set parameters (beta = infection parameter, gamma = recovery parameter)
+parameters_hongkong <- c(beta = beta, gamma = gamma_hongkong)
+
+# set time frame (2 years = 730 days)
+times <- seq(0, 730, by = 1)
+```
+
+Solve using ode (General Solver for Ordinary Differential Equations)
+```{r}
+# run ode function given parameters, initial proportions, and time frame
+out_hongkong <- ode(y = init, times = times, func = sir, parms = parameters_hongkong)
+
+## change to data frame
+out_hongkong <- as.data.frame(out_hongkong)
+
+## Delete time variable
+out_hongkong$time <- NULL
+
+## Show data
+tail(out_hongkong, 10) 
+```
+
+2. Plot the time series of membership in each compartment. At the peak of the epidemic, what proportion of the population is infected? What is the proportion of the population infected during the epidemic (final size)?
+```{r}
+# find max proportion of pop infected at peak
+max(out_hongkong$I)*100 # 0.43% of pop infected at peak
+
+# find max number of pop infected at peak, based on proportion
+round((max(out_hongkong$I))*(max_sars_subset$Total_Pop[max_sars_subset$Country == "Hong Kong"])) # rounded to 31,531
+
+# at end, what proportion of population had been infected:
+max(out_hongkong$R * 100) # 17.6% of pop
+
+# find number of population at end had been infected
+round((max(out_hongkong$R))*(max_sars_subset$Total_Pop[max_sars_subset$Country == "Hong Kong"])) # rounded to 1,300,251
+```
+
+
+3. Overlay plots (from link)
+```{r}
+# Plot
+matplot(x = times, y = out_hongkong, type = "l",
+        xlab = "Time (Days)", ylab = "Proportion of Population Susceptible and Recovered", main = "SIR Model - Hong Kong",
+        lwd = 1, lty = 1, bty = "l", col = 2:4)
+
+# Add legend
+legend(40, 0.7, c("Susceptible", "Infected", "Recovered"), pch = 1, col = 2:4, bty = "n")
+```
+
+# SINGAPORE
+Set parameters
+```{r}
+# set initial proportion in each compartment: Susceptible 0.999999, Infected 0.000001, Recovered 0
+init       <- c(S = 1-1e-6, I = 1e-6, R = 0.0)
+
+# set parameters (beta = infection parameter, gamma = recovery parameter)
+parameters_singapore <- c(beta = beta, gamma = gamma_singapore)
+
+# set time frame (2 years = 730 days)
+time <- seq(0, 730, by = 1)
+```
+
+Solve using ode (General Solver for Ordinary Differential Equations)
+```{r}
+# run ode function given parameters, initial proportions, and time frame
+out_singapore <- ode(y = init, times = times, func = sir, parms = parameters_singapore)
+
+## change to data frame
+out_singapore <- as.data.frame(out_singapore)
+
+## Delete time variable
+out_singapore$time <- NULL
+
+## Show data
+tail(out_singapore, 10) 
+```
+
+
+2. Plot the time series of membership in each compartment. At the peak of the epidemic, what proportion of the population is infected? What is the proportion of the population infected during the epidemic (final size)?
+```{r}
+# find max proportion of pop infected at peak
+max(out_singapore$I)*100 # 1.1% of pop infected at peak
+
+# find max number of pop infected at peak, based on proportion
+round((max(out_singapore$I))*(max_sars_subset$Total_Pop[max_sars_subset$Country == "Singapore"])) # rounded to 51,194
+
+# at end, what proportion of population had been infected:
+max(out_singapore$R * 100) # 27.6% of pop
+
+# find number of population at end had been infected
+round((max(out_singapore$R))*(max_sars_subset$Total_Pop[max_sars_subset$Country == "Singapore"])) # rounded to 1,271,035
+```
+
+3. Overlay plots (from link)
+```{r}
+# Plot
+matplot(x = times, y = out_singapore, type = "l",
+        xlab = "Time (Days)", ylab = "Proportion of Population Susceptible and Recovered", main = "SIR Model - Singapore",
+        lwd = 1, lty = 1, bty = "l", col = 2:4)
+
+# Add legend
+legend(40, 0.7, c("Susceptible", "Infected", "Recovered"), pch = 1, col = 2:4, bty = "n")
+```
