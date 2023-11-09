@@ -1,0 +1,48 @@
+---
+title: "max_incidence"
+author: "Monica Dimambro"
+date: "2023-11-07"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Libraries
+```{r}
+library(dplyr)
+```
+
+# Load in Data
+```{r}
+all_sars <- readRDS("~/Desktop/Dartmouth/6. Fall 2023 Term/QBS 181 Data Wrangling/5. Final Project/cleandata.rds")
+subset_sars <- readRDS("~/Desktop/Dartmouth/6. Fall 2023 Term/QBS 181 Data Wrangling/5. Final Project/cleandata2.rds")
+
+demos <- read.csv("~/Desktop/Dartmouth/6. Fall 2023 Term/QBS 181 Data Wrangling/5. Final Project/summary_data_clean.csv")
+pop <- readRDS("~/Desktop/Dartmouth/6. Fall 2023 Term/QBS 181 Data Wrangling/5. Final Project/pop.rds")
+```
+
+Create table of only last entry (with maximum cumulative cases) per country with greater than max cumulative cases
+```{r}
+max_sars_subset <- subset_sars %>% group_by(Country) %>% summarise_all(last)
+print(max_sars_subset)
+```
+
+# Get Max Incidence
+```{r}
+# CANADA
+max_inc_canada <- all_sars %>% select(Country, New_Cases) %>% filter(Country=="Canada")
+max_inc_canada$New_Cases <- ifelse(is.na(max_inc_canada$New_Cases), 0, max_inc_canada$New_Cases)
+max_inc_canada <- max(max_inc_canada$New_Cases) # 29
+
+# HONG KONG
+max_inc_hongkong <- all_sars %>% select(Country, New_Cases) %>% filter(Country=="Hong Kong")
+max_inc_hongkong$New_Cases <- ifelse(is.na(max_inc_hongkong$New_Cases), 0, max_inc_hongkong$New_Cases)
+max_inc_hongkong <- max(max_inc_hongkong$New_Cases) # 155
+
+# SINGAPORE
+max_inc_singapore <- all_sars %>% select(Country, New_Cases) %>% filter(Country=="Singapore")
+max_inc_singapore$New_Cases <- ifelse(is.na(max_inc_singapore$New_Cases), 0, max_inc_singapore$New_Cases)
+max_inc_singapore <- max(max_inc_singapore$New_Cases) # 21
+```
