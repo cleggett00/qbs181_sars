@@ -16,6 +16,11 @@ library(deSolve) # for SIR plot
 library(rootSolve) # for SIR plot
 ```
 
+# Load in functions
+```{r}
+source(file = '~/Desktop/Dartmouth/6. Fall 2023 Term/QBS 181 Data Wrangling/5. Final Project/181/data_wrangling_functions_library.R')
+```
+
 # Load in Data
 ```{r}
 all_sars <- readRDS("~/Desktop/Dartmouth/6. Fall 2023 Term/QBS 181 Data Wrangling/5. Final Project/cleandata.rds")
@@ -75,20 +80,7 @@ gamma_hongkong <- beta/r0_hongkong
 gamma_singapore <- beta/r0_singapore
 ```
 
-Create an SIR function
-```{r}
-sir <- function(time, state, parameters) {
-
-  with(as.list(c(state, parameters)), {
-
-    dS <- -beta * S * I
-    dI <-  beta * S * I - gamma * I
-    dR <-                 gamma * I
-
-    return(list(c(dS, dI, dR)))
-  })
-}
-```
+Create an SIR function - from the functions library
 
 # CANADA
 Set parameters
