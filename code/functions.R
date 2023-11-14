@@ -31,3 +31,17 @@ split_and_save_by_country <- function(data) {
     saveRDS(country_data, file = rds_file)
   }
 }
+
+
+# SIR function
+sir <- function(time, state, parameters) {
+     
+     with(as.list(c(state, parameters)), {
+          
+          dS <- -beta * S * I
+          dI <-  beta * S * I - gamma * I
+          dR <-                 gamma * I
+          
+          return(list(c(dS, dI, dR)))
+     })
+}
