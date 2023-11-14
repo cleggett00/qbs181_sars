@@ -30,19 +30,38 @@ print(max_sars_subset)
 ```
 
 # Get Max Incidence
+Canada
 ```{r}
-# CANADA
+# subset df to pull just Country and New_Cases variables for Canada
 max_inc_canada <- all_sars %>% select(Country, New_Cases) %>% filter(Country=="Canada")
+
+# Change New_Cases = NA to 0
 max_inc_canada$New_Cases <- ifelse(is.na(max_inc_canada$New_Cases), 0, max_inc_canada$New_Cases)
+
+# view maximum daily incidence
 max_inc_canada <- max(max_inc_canada$New_Cases) # 29
+```
 
-# HONG KONG
+Hong Kong
+```{r}
+# subset df to pull just Country and New_Cases variables for Hong Kong
 max_inc_hongkong <- all_sars %>% select(Country, New_Cases) %>% filter(Country=="Hong Kong")
-max_inc_hongkong$New_Cases <- ifelse(is.na(max_inc_hongkong$New_Cases), 0, max_inc_hongkong$New_Cases)
-max_inc_hongkong <- max(max_inc_hongkong$New_Cases) # 155
 
-# SINGAPORE
+# Change New_Cases = NA to 0
+max_inc_hongkong$New_Cases <- ifelse(is.na(max_inc_hongkong$New_Cases), 0, max_inc_hongkong$New_Cases)
+
+# view maximum daily incidence
+max_inc_hongkong <- max(max_inc_hongkong$New_Cases) # 155
+```
+
+Singapore
+```{r}
+# subset df to pull just Country and New_Cases variables for Singapore
 max_inc_singapore <- all_sars %>% select(Country, New_Cases) %>% filter(Country=="Singapore")
+
+# Change New_Cases = NA to 0
 max_inc_singapore$New_Cases <- ifelse(is.na(max_inc_singapore$New_Cases), 0, max_inc_singapore$New_Cases)
+
+# view maximum daily incidence
 max_inc_singapore <- max(max_inc_singapore$New_Cases) # 21
 ```
