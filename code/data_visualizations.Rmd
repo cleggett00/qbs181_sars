@@ -20,16 +20,22 @@ library(viridis)
 library(gridExtra)
 ```
 
-
 ## get cleaned data
 
 ```{r}
 project_path <- find_rstudio_root_file()
 rawdata_path <- paste0(project_path, "/raw_data/")
 data_path <- paste0(project_path, "/data/")
+code_path <- paste0(project_path, "/code/")
 cleandata <- readRDS(file = paste0(data_path,"cleandata.rds"))
 cleandata2 <- readRDS(file = paste0(data_path,"cleandata2.rds"))
 ```
+
+## source functions library
+```{r}
+source(file = paste0(code_path, "functions.R"))
+```
+
 
 
 ## Bar chart showing maximum cases by country
@@ -60,21 +66,6 @@ grid.arrange(p1, p2, ncol = 2)
 
 ## Line graphs of cases and deaths
 ```{r}
-
-##############################################################
-# define function
-
-# plot one country at a time
-plot_one <- function(df=cleandata2, country, yvar) {
-     df <- df %>%
-          filter(Country %in%(country))
-     ggplot(df, aes(x = Date, y = get(yvar))) +
-          geom_point(color = "steelblue3") +
-          labs(x= NULL, y= NULL) +
-          ggtitle(country) +
-          expand_limits(y=0) +
-          theme_classic()
-}
 
 
 #################################################################
